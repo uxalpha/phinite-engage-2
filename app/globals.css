@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-black;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 border border-black hover:bg-black hover:text-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply bg-black text-white hover:bg-gray-800;
+  }
+  
+  .input {
+    @apply w-full px-4 py-2 border border-gray-300 focus:outline-none focus:border-black;
+  }
+  
+  .card {
+    @apply border border-gray-300 p-6;
+  }
+  
+  .badge {
+    @apply inline-block px-3 py-1 text-sm border;
+  }
+  
+  .badge-pending {
+    @apply border-gray-400 text-gray-600;
+  }
+  
+  .badge-verified {
+    @apply border-black bg-black text-white;
+  }
+  
+  .badge-rejected {
+    @apply border-gray-400 bg-gray-200 text-gray-700;
+  }
+  
+  .badge-manual_review {
+    @apply border-gray-400 text-gray-600;
+  }
+}
