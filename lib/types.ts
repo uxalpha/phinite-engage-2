@@ -81,3 +81,8 @@ export interface AIVerificationResponse {
   content_quality_pass: boolean
   duplicate_risk: string
 }
+
+// Some AI trigger calls may return a 200 "pending" payload first,
+// and later return the full AIVerificationResponse.
+export type AIVerificationResponseMaybe =
+  Partial<AIVerificationResponse> & { status?: string; workflow_id?: string }
