@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface User {
@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -47,6 +47,7 @@ export default function DashboardPage() {
     fetchSubmissions(token)
   }, [router])
 
+
   const fetchSubmissions = async (token: string) => {
     try {
       const response = await fetch('/api/submissions', {
@@ -61,11 +62,12 @@ export default function DashboardPage() {
     }
   }
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setMessage('')
-    setLoading(true)
+    setSubmitting(true)
 
     const token = localStorage.getItem('token')
     if (!token) {
@@ -75,7 +77,7 @@ export default function DashboardPage() {
 
     if (!formData.file) {
       setError('Please select an image')
-      setLoading(false)
+      setSubmitting(false)
       return
     }
 
@@ -99,29 +101,20 @@ export default function DashboardPage() {
         throw new Error(data.error || 'Submission failed')
       }
 
-      setMessage(data.message)
+      // Show success message and reset form immediately
+      setMessage('✅ Submission received successfully! AI is analyzing your proof in the background. Check the admin review queue in a few minutes.')
       setFormData({ action_type: 'LIKE', file: null, notes: '' })
       
       // Reset file input
       const fileInput = document.getElementById('file') as HTMLInputElement
       if (fileInput) fileInput.value = ''
 
-      // Refresh submissions and user data
+      // Refresh submissions to show the new pending entry
       fetchSubmissions(token)
-      
-      // Update user points in localStorage
-      const updatedResponse = await fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (updatedResponse.ok) {
-        const userData = await updatedResponse.json()
-        setUser(userData.user)
-        localStorage.setItem('user', JSON.stringify(userData.user))
-      }
     } catch (err: any) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
@@ -225,8 +218,8 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit Proof'}
+            <button type="submit" className="btn btn-primary w-full" disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Submit Proof'}
             </button>
           </form>
         </div>
@@ -254,7 +247,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <span className={`badge badge-${submission.status}`}>
-                        {submission.status.replace('_', ' ').toUpperCase()}
+                        {submission.status === 'manual_review' ? 'PENDING ADMIN REVIEW' : submission.status.replace('_', ' ').toUpperCase()}
                       </span>
                     </div>
                     {submission.status === 'verified' && (

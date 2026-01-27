@@ -56,23 +56,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Manually update user points (trigger should handle this, but as backup)
-    await supabaseAdmin
+    // Update user points
+    const { data: currentUser } = await supabaseAdmin
       .from('users')
-      .update({
-        total_points: supabaseAdmin.rpc('increment', { x: points })
-      })
+      .select('total_points')
       .eq('id', submission.user_id)
+      .single()
+
+    if (currentUser) {
+      await supabaseAdmin
+        .from('users')
+        .update({
+          total_points: currentUser.total_points + points
+        })
+        .eq('id', submission.user_id)
+    }
 
     // Update monthly points
     const month = getCurrentMonth()
-    await supabaseAdmin
+    const { data: currentMonthly } = await supabaseAdmin
       .from('monthly_points')
-      .upsert({
-        user_id: submission.user_id,
-        month,
-        points: supabaseAdmin.rpc('increment', { x: points })
-      })
+      .select('points')
+      .eq('user_id', submission.user_id)
+      .eq('month', month)
+      .single()
+
+    if (currentMonthly) {
+      await supabaseAdmin
+        .from('monthly_points')
+        .update({
+          points: currentMonthly.points + points
+        })
+        .eq('user_id', submission.user_id)
+        .eq('month', month)
+    } else {
+      await supabaseAdmin
+        .from('monthly_points')
+        .insert({
+          user_id: submission.user_id,
+          month,
+          points
+        })
+    }
 
     return NextResponse.json({
       message: 'Submission approved successfully',

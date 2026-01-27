@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get pending submissions
+    // Get pending submissions (including admin's own submissions)
     const { data: submissions, error } = await supabaseAdmin
       .from('submissions')
       .select(`
@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    console.log(`Admin pending: Found ${submissions?.length || 0} submissions`)
+    console.log('Submission user emails:', submissions?.map(s => s.users?.email).join(', '))
 
     return NextResponse.json({ submissions })
   } catch (error) {

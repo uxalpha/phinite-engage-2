@@ -42,6 +42,6 @@
   }
   
   .badge-manual_review {
-    @apply border-gray-400 text-gray-600;
+    @apply border-orange-500 bg-orange-50 text-orange-700 font-medium;
   }
 }

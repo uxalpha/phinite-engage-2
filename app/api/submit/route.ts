@@ -1,140 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { authenticateUser } from '@/lib/middleware'
-import { AIVerificationResponse, ActionType } from '@/lib/types'
-import { extractActionFromAI, POINTS_MAP } from '@/lib/utils'
-
-type AIVerificationFinal = {
-  workflow_id: string
-  platform_detected: string
-  like_detected?: boolean
-  comment_detected?: boolean
-  repost_detected?: boolean
-  tag_detected?: boolean
-  original_post_detected?: boolean
-  primary_action: string
-  assigned_points: number
-  action_confidence: number
-  duplicate_risk: string
-}
-
-type AIVerificationMaybe = Partial<AIVerificationResponse> & {
-  status?: string
-  workflow_id?: string
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function jitterMs(ms: number, jitterRatio: number) {
-  const jitter = ms * jitterRatio * (Math.random() * 2 - 1) // +/- jitterRatio
-  return Math.max(0, Math.round(ms + jitter))
-}
+import { ActionType } from '@/lib/types'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function isAIVerificationFinal(value: unknown): value is AIVerificationFinal {
-  if (!isRecord(value)) return false
-
-  return (
-    typeof value.workflow_id === 'string' &&
-    typeof value.platform_detected === 'string' &&
-    typeof value.primary_action === 'string' &&
-    typeof value.assigned_points === 'number' &&
-    typeof value.action_confidence === 'number' &&
-    typeof value.duplicate_risk === 'string'
-  )
+function getAiStartUrl() {
+  const raw = process.env.AI_VERIFICATION_API_URL
+  if (!raw) throw new Error('AI_VERIFICATION_API_URL is not set')
+  return raw
 }
 
-async function fetchAiVerificationWithPolling(params: {
-  aiApiUrl: string
+async function startAiWorkflow(params: {
+  aiStartUrl: string
   aiApiKey: string
   imageUrl: string
-  maxWaitMs?: number
-  initialDelayMs?: number
-  maxDelayMs?: number
-  jitterRatio?: number
 }) {
-  const {
-    aiApiUrl,
-    aiApiKey,
-    imageUrl,
-    maxWaitMs = 45_000,
-    initialDelayMs = 900,
-    maxDelayMs = 5_000,
-    jitterRatio = 0.15,
-  } = params
+  const { aiStartUrl, aiApiKey, imageUrl } = params
 
-  const startedAt = Date.now()
-  let attempt = 0
-  let delayMs = initialDelayMs
-  let lastWorkflowId: string | undefined
+  console.log('Starting AI workflow with URL:', aiStartUrl)
 
-  while (Date.now() - startedAt < maxWaitMs) {
-    attempt += 1
+  const res = await fetch(aiStartUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${aiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      user_variables: { proof_image: imageUrl },
+    }),
+  })
 
-    const aiResponse = await fetch(aiApiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${aiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ proof_image: imageUrl }),
-    })
+  const rawText = await res.text()
+  console.log('AI start API response status:', res.status)
+  console.log('AI start API response body:', rawText)
 
-    const rawText = await aiResponse.text()
-
-    if (!aiResponse.ok) {
-      console.error('AI API error:', rawText)
-      throw new Error('AI verification failed')
-    }
-
-    let parsed: unknown
-    try {
-      parsed = rawText ? JSON.parse(rawText) : null
-    } catch (e) {
-      console.error('AI API returned non-JSON body:', rawText)
-      throw new Error('AI verification failed')
-    }
-
-    if (isAIVerificationFinal(parsed)) {
-      return { aiData: parsed, workflowId: parsed.workflow_id, timedOut: false as const }
-    }
-
-    const maybe = (isRecord(parsed) ? (parsed as AIVerificationMaybe) : undefined)
-    if (maybe?.workflow_id && typeof maybe.workflow_id === 'string') {
-      lastWorkflowId = maybe.workflow_id
-    }
-
-    const status = typeof maybe?.status === 'string' ? maybe.status.toLowerCase() : undefined
-    const looksPending =
-      status === undefined ||
-      status === 'pending' ||
-      status === 'queued' ||
-      status === 'running'
-
-    // If it's not final, we wait and retry (bounded by timeout).
-    if (attempt === 1 || attempt % 5 === 0) {
-      console.info('AI verification not final yet; retrying', {
-        attempt,
-        workflow_id: lastWorkflowId,
-        status,
-      })
-    }
-
-    if (!looksPending) {
-      // Non-final but also not explicitly pending; still retry until timeout since
-      // the trigger is expected to eventually produce the final payload.
-    }
-
-    await sleep(jitterMs(delayMs, jitterRatio))
-    delayMs = Math.min(Math.round(delayMs * 1.6), maxDelayMs)
+  if (!res.ok) {
+    console.error('AI start API error:', rawText)
+    throw new Error(`AI workflow start failed: ${res.status} ${rawText}`)
   }
 
-  return { aiData: null, workflowId: lastWorkflowId, timedOut: true as const }
+  let parsed: unknown
+  try {
+    parsed = rawText ? JSON.parse(rawText) : null
+  } catch (e) {
+    console.error('AI start API returned non-JSON body:', rawText)
+    throw new Error('AI workflow start failed: Invalid JSON response')
+  }
+
+  if (!isRecord(parsed) || typeof parsed.workflow_id !== 'string') {
+    console.error('AI start API returned unexpected payload:', parsed)
+    throw new Error('AI workflow start failed: Missing workflow_id')
+  }
+
+  return { 
+    workflowId: parsed.workflow_id, 
+    status: typeof parsed.status === 'string' ? parsed.status : 'pending' 
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -197,75 +121,27 @@ export async function POST(request: NextRequest) {
 
     const imageUrl = urlData.publicUrl
 
-    // Call AI Verification API (poll until final result or timeout)
-    const aiApiUrl = process.env.AI_VERIFICATION_API_URL!
+    // Call AI Trigger Start API (async verification; client polls /api/submit/status)
+    const aiStartUrl = getAiStartUrl()
     const aiApiKey = process.env.AI_VERIFICATION_API_KEY!
-    const { aiData, workflowId, timedOut } = await fetchAiVerificationWithPolling({
-      aiApiUrl,
+    const { workflowId } = await startAiWorkflow({
+      aiStartUrl,
       aiApiKey,
       imageUrl,
     })
-
-    // Determine verification status
-    let status: 'verified' | 'rejected' | 'manual_review' = 'manual_review'
-    let pointsAwarded = 0
-    
-    if (aiData) {
-      // Check if platform is LinkedIn
-      if (aiData.platform_detected !== 'LinkedIn') {
-        status = 'rejected'
-      }
-      // Check confidence threshold
-      else if (aiData.action_confidence >= 0.8) {
-        status = 'verified'
-        pointsAwarded = aiData.assigned_points
-      }
-      // Check duplicate risk
-      else if (aiData.duplicate_risk === 'HIGH') {
-        status = 'rejected'
-      }
-      // Check if user-claimed action matches AI detection
-      else {
-        const detectedAction = extractActionFromAI(aiData.primary_action)
-        if (detectedAction === actionType && aiData.action_confidence >= 0.6) {
-          status = 'verified'
-          pointsAwarded = POINTS_MAP[actionType]
-        }
-      }
-    } else {
-      // AI workflow didn't finalize within our timeout window.
-      // Fall back to manual review so the user isn't stuck on "pending".
-      status = 'manual_review'
-      pointsAwarded = 0
-    }
 
     // Create submission record
     const insertPayload: Record<string, unknown> = {
       user_id: auth.userId,
       action_type: actionType,
       image_url: imageUrl,
-      status,
-      points_awarded: pointsAwarded,
+      status: 'pending',
+      points_awarded: 0,
       notes,
-      verified_at: status === 'verified' ? new Date().toISOString() : null,
+      verified_at: null,
     }
 
-    if (workflowId) {
-      insertPayload.workflow_id = workflowId
-    }
-
-    if (aiData) {
-      insertPayload.platform_detected = aiData.platform_detected
-      if (typeof aiData.like_detected === 'boolean') insertPayload.like_detected = aiData.like_detected
-      if (typeof aiData.comment_detected === 'boolean') insertPayload.comment_detected = aiData.comment_detected
-      if (typeof aiData.repost_detected === 'boolean') insertPayload.repost_detected = aiData.repost_detected
-      if (typeof aiData.tag_detected === 'boolean') insertPayload.tag_detected = aiData.tag_detected
-      if (typeof aiData.original_post_detected === 'boolean') insertPayload.original_post_detected = aiData.original_post_detected
-      insertPayload.primary_action = aiData.primary_action
-      insertPayload.assigned_points = aiData.assigned_points
-      insertPayload.action_confidence = aiData.action_confidence
-      insertPayload.duplicate_risk = aiData.duplicate_risk
-    }
+    insertPayload.workflow_id = workflowId
 
     const { data: submission, error: submissionError } = await supabaseAdmin
       .from('submissions')
@@ -283,13 +159,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       submission,
-      message: status === 'verified' 
-        ? `Verified! You earned ${pointsAwarded} points.`
-        : status === 'rejected'
-        ? 'Submission rejected. Please ensure you upload a valid LinkedIn activity screenshot.'
-        : timedOut
-        ? 'Submission received. Verification is taking longer than usual. Pending manual review.'
-        : 'Submission received. Pending manual review.'
+      workflow_id: workflowId,
+      message: 'Submission received. Verification started — checking status every 10 seconds.'
     })
   } catch (error) {
     console.error('Submission error:', error)

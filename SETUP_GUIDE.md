@@ -83,8 +83,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...your_anon_key...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your_service_role_key...
 
-# AI Verification API
-AI_VERIFICATION_API_URL=https://ai-core-dev.phinite.ai/trigger/QZ-3DDP/16qObTjWO/development
+# AI Verification API (use the Start endpoint; app will poll Status internally)
+AI_VERIFICATION_API_URL=https://ai-core-dev.phinite.ai/trigger/start/QZ-3DDP/16qObTjWO/development
 AI_VERIFICATION_API_KEY=your_api_key_here
 
 # JWT Secret (generate random string)
@@ -190,7 +190,10 @@ git push origin main
 ### AI verification not working
 - Verify `AI_VERIFICATION_API_KEY` is correct
 - Check AI API endpoint is accessible
-- Look at browser console for error messages
+- Verify `AI_VERIFICATION_API_URL` is the full START endpoint (includes trigger ID)
+- Look at browser console and server logs for error messages
+- Check that the URL format is: `https://<host>/trigger/start/<PROJECT_ID>/<TRIGGER_ID>/<environment>`
+- The status endpoint is automatically constructed as: `https://<host>/trigger/status/<PROJECT_ID>/<workflow_id>`
 
 ### Build fails
 - Run `npm install` again
