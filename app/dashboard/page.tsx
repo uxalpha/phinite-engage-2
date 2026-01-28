@@ -2,6 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 
 interface User {
   id: string
@@ -159,186 +169,193 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Brand Engagement</h1>
-            <p className="text-gray-600 mt-1">Welcome, {user.name}</p>
+            <p className="text-muted-foreground mt-1">Welcome, {user.name}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-sm text-gray-600">Total Points</div>
+              <div className="text-sm text-muted-foreground">Total Points</div>
               <div className="text-2xl font-bold">{user.total_points}</div>
             </div>
-            <button onClick={handleLogout} className="btn text-sm">
+            <Button onClick={handleLogout} variant="outline" size="sm">
               Logout
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Navigation */}
-        <div className="flex gap-4 mb-8 border-b border-gray-300 pb-4">
-          <button className="font-medium border-b-2 border-black pb-2">Submit Proof</button>
-          <button onClick={() => router.push('/streak')} className="text-gray-600 hover:text-black pb-2">
+        <div className="flex gap-4 mb-8 border-b pb-4">
+          <Button variant="ghost" className="font-medium border-b-2 border-primary rounded-none">
+            Submit Proof
+          </Button>
+          <Button variant="ghost" onClick={() => router.push('/streak')}>
             Streak
-          </button>
-          <button onClick={() => router.push('/leaderboard')} className="text-gray-600 hover:text-black pb-2">
+          </Button>
+          <Button variant="ghost" onClick={() => router.push('/leaderboard')}>
             Leaderboard
-          </button>
+          </Button>
           {user.email === 'ashish.deekonda@phinite.ai' && (
-            <button onClick={() => router.push('/admin')} className="text-gray-600 hover:text-black pb-2">
+            <Button variant="ghost" onClick={() => router.push('/admin')}>
               Admin
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Platform Tabs */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Select Platform</h2>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setActivePlatform('linkedin')}
-              className={`px-4 py-2 border-2 transition-colors ${
-                activePlatform === 'linkedin'
-                  ? 'border-black bg-black text-white font-medium'
-                  : 'border-gray-300 bg-white text-black hover:border-gray-400'
-              }`}
-            >
-              LinkedIn
-            </button>
-            <button
-              disabled
-              className="px-4 py-2 border-2 border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-            >
-              Twitter (Coming Soon)
-            </button>
-            <button
-              disabled
-              className="px-4 py-2 border-2 border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-            >
-              Instagram (Coming Soon)
-            </button>
-            <button
-              disabled
-              className="px-4 py-2 border-2 border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-            >
-              Reddit (Coming Soon)
-            </button>
-          </div>
-        </div>
+        <Tabs defaultValue="linkedin" className="mb-8" onValueChange={(val) => setActivePlatform(val as Platform)}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
+            <TabsTrigger value="twitter" disabled>Twitter</TabsTrigger>
+            <TabsTrigger value="instagram" disabled>Instagram</TabsTrigger>
+            <TabsTrigger value="reddit" disabled>Reddit</TabsTrigger>
+          </TabsList>
 
-        {/* Platform Content */}
-        {activePlatform === 'linkedin' ? (
-          <>
+          <TabsContent value="linkedin" className="space-y-8">
             {/* Submit Form */}
-            <div className="card mb-8">
-              <h2 className="text-xl font-bold mb-4">Submit LinkedIn Activity</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Activity Type *</label>
-                  <select
-                    className="input"
-                    value={formData.action_type}
-                    onChange={(e) => setFormData({ ...formData, action_type: e.target.value })}
-                  >
-                    <option value="LIKE">Like (5 points)</option>
-                    <option value="COMMENT">Comment (10 points)</option>
-                    <option value="REPOST">Repost (15 points)</option>
-                    <option value="TAG">Tag a Teammate (20 points)</option>
-                    <option value="ORIGINAL_POST">Original Post (25 points)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Proof Screenshot *</label>
-                  <input
-                    id="file"
-                    type="file"
-                    accept="image/*"
-                    className="input"
-                    onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
-                    required
-                  />
-                  <p className="text-xs text-gray-600 mt-1">
-                    Upload a screenshot of your LinkedIn activity
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Notes (Optional)</label>
-                  <textarea
-                    className="input"
-                    rows={3}
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Any additional context..."
-                  />
-                </div>
-
-                {message && (
-                  <div className="p-3 border border-black bg-white">
-                    {message}
+            <Card>
+              <CardHeader>
+                <CardTitle>Submit LinkedIn Activity</CardTitle>
+                <CardDescription>Upload proof of your engagement to earn points</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="action_type">Activity Type *</Label>
+                    <Select
+                      value={formData.action_type}
+                      onValueChange={(value) => setFormData({ ...formData, action_type: value })}
+                    >
+                      <SelectTrigger id="action_type">
+                        <SelectValue placeholder="Select activity type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LIKE">Like (5 points)</SelectItem>
+                        <SelectItem value="COMMENT">Comment (10 points)</SelectItem>
+                        <SelectItem value="REPOST">Repost (15 points)</SelectItem>
+                        <SelectItem value="TAG">Tag a Teammate (20 points)</SelectItem>
+                        <SelectItem value="ORIGINAL_POST">Original Post (25 points)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
 
-                {error && (
-                  <div className="p-3 border border-gray-400 bg-gray-100">
-                    {error}
+                  <div className="space-y-2">
+                    <Label htmlFor="file">Proof Screenshot *</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Upload a screenshot of your LinkedIn activity
+                    </p>
                   </div>
-                )}
 
-                <button type="submit" className="btn btn-primary w-full" disabled={submitting}>
-                  {submitting ? 'Submitting...' : 'Submit Proof'}
-                </button>
-              </form>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Textarea
+                      id="notes"
+                      rows={3}
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Any additional context..."
+                    />
+                  </div>
+
+                  {message && (
+                    <Alert>
+                      <AlertDescription>{message}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={submitting}>
+                    {submitting ? 'Submitting...' : 'Submit Proof'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
 
             {/* Recent Submissions */}
-            <div className="card">
-              <h2 className="text-xl font-bold mb-4">Your Submissions</h2>
-              {submissions.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No submissions yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {submissions.slice(0, 5).map((submission) => (
-                    <div key={submission.id} className="border border-gray-300 p-4 flex flex-col md:flex-row gap-4">
-                      <img
-                        src={submission.image_url}
-                        alt="Proof"
-                        className="w-full md:w-24 h-24 object-cover border border-gray-300"
-                      />
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="font-medium">{submission.action_type.replace('_', ' ')}</div>
-                            <div className="text-sm text-gray-600">
-                              {new Date(submission.submitted_at).toLocaleDateString()}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Submissions</CardTitle>
+                <CardDescription>Recent activity submissions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {submissions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No submissions yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {submissions.slice(0, 5).map((submission) => (
+                      <div key={submission.id} className="border rounded-lg p-4 flex flex-col md:flex-row gap-4">
+                        <img
+                          src={submission.image_url}
+                          alt="Proof"
+                          className="w-full md:w-24 h-24 object-cover border rounded"
+                        />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="font-medium">{submission.action_type.replace('_', ' ')}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {new Date(submission.submitted_at).toLocaleDateString()}
+                              </div>
                             </div>
+                            <Badge variant={submission.status as any}>
+                              {submission.status === 'manual_review' ? 'PENDING ADMIN REVIEW' : submission.status.replace('_', ' ').toUpperCase()}
+                            </Badge>
                           </div>
-                          <span className={`badge badge-${submission.status}`}>
-                            {submission.status === 'manual_review' ? 'PENDING ADMIN REVIEW' : submission.status.replace('_', ' ').toUpperCase()}
-                          </span>
+                          {submission.status === 'verified' && (
+                            <div className="text-sm font-medium">+{submission.points_awarded} points</div>
+                          )}
+                          {submission.notes && (
+                            <div className="text-sm text-muted-foreground mt-2">{submission.notes}</div>
+                          )}
                         </div>
-                        {submission.status === 'verified' && (
-                          <div className="text-sm font-medium">+{submission.points_awarded} points</div>
-                        )}
-                        {submission.notes && (
-                          <div className="text-sm text-gray-600 mt-2">{submission.notes}</div>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="card text-center py-16">
-            <div className="text-6xl mb-4">🚧</div>
-            <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
-            <p className="text-gray-600">
-              {activePlatform === 'twitter' && 'Twitter integration is coming soon!'}
-              {activePlatform === 'instagram' && 'Instagram integration is coming soon!'}
-              {activePlatform === 'reddit' && 'Reddit integration is coming soon!'}
-            </p>
-          </div>
-        )}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="twitter">
+            <Card className="text-center py-16">
+              <CardContent>
+                <div className="text-6xl mb-4">🚧</div>
+                <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+                <p className="text-muted-foreground">Twitter integration is coming soon!</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="instagram">
+            <Card className="text-center py-16">
+              <CardContent>
+                <div className="text-6xl mb-4">🚧</div>
+                <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+                <p className="text-muted-foreground">Instagram integration is coming soon!</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reddit">
+            <Card className="text-center py-16">
+              <CardContent>
+                <div className="text-6xl mb-4">🚧</div>
+                <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+                <p className="text-muted-foreground">Reddit integration is coming soon!</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

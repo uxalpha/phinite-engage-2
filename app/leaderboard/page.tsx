@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface LeaderboardEntry {
   id: string
@@ -52,61 +55,68 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Leaderboard</h1>
             {month && (
-              <p className="text-gray-600 mt-1">{getMonthName(month)}</p>
+              <p className="text-muted-foreground mt-1">{getMonthName(month)}</p>
             )}
           </div>
-          <button onClick={() => router.push('/dashboard')} className="btn">
+          <Button onClick={() => router.push('/dashboard')} variant="outline">
             Back to Dashboard
-          </button>
+          </Button>
         </div>
 
-        <div className="card">
-          {loading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : leaderboard.length === 0 ? (
-            <div className="text-center py-8 text-gray-600">
-              No entries yet for this month
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {leaderboard.map((entry, index) => (
-                <div
-                  key={entry.id}
-                  className={`flex items-center justify-between p-4 border border-gray-300 ${
-                    index < 3 ? 'bg-gray-50' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-8 h-8 flex items-center justify-center font-bold ${
-                        index === 0
-                          ? 'bg-black text-white'
-                          : index === 1
-                          ? 'bg-gray-800 text-white'
-                          : index === 2
-                          ? 'bg-gray-600 text-white'
-                          : 'bg-gray-200'
-                      }`}
-                    >
-                      {entry.rank}
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Rankings</CardTitle>
+            <CardDescription>Top performers for {month && getMonthName(month)}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Loading...</div>
+            ) : leaderboard.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No entries yet for this month
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {leaderboard.map((entry, index) => (
+                  <div
+                    key={entry.id}
+                    className={`flex items-center justify-between p-4 border rounded-lg ${
+                      index < 3 ? 'bg-muted/50' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Badge
+                        variant={index === 0 ? 'default' : 'secondary'}
+                        className={`w-8 h-8 flex items-center justify-center font-bold rounded-full ${
+                          index === 0
+                            ? 'bg-black text-white'
+                            : index === 1
+                            ? 'bg-gray-800 text-white'
+                            : index === 2
+                            ? 'bg-gray-600 text-white'
+                            : ''
+                        }`}
+                      >
+                        {entry.rank}
+                      </Badge>
+                      <div>
+                        <div className="font-medium">{entry.name}</div>
+                        <div className="text-sm text-muted-foreground">{entry.email}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium">{entry.name}</div>
-                      <div className="text-sm text-gray-600">{entry.email}</div>
-                    </div>
+                    <div className="text-xl font-bold">{entry.points}</div>
                   </div>
-                  <div className="text-xl font-bold">{entry.points}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <div className="mt-8 text-sm text-gray-600 text-center">
+        <div className="mt-8 text-sm text-muted-foreground text-center">
           <p>Leaderboard resets on the 1st of each month</p>
         </div>
       </div>

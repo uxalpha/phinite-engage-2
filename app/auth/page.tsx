@@ -2,6 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -57,73 +62,86 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Name</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required={!isLogin}
+        <Card>
+          <CardHeader>
+            <CardTitle>{isLogin ? 'Sign In' : 'Sign Up'}</CardTitle>
+            <CardDescription>
+              {isLogin ? 'Enter your credentials to access your account' : 'Create a new account to get started'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required={!isLogin}
+                    placeholder="Enter your name"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  placeholder="Enter your email"
                 />
               </div>
-            )}
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <input
-                type="email"
-                className="input"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
-              <input
-                type="password"
-                className="input"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                minLength={6}
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 border border-gray-400 bg-gray-100 text-sm">
-                {error}
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  minLength={6}
+                  placeholder="Enter your password"
+                />
               </div>
-            )}
 
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={loading}
-            >
-              {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
-            </button>
-          </form>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin)
-                setError('')
-              }}
-              className="text-sm hover:underline"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
-            </button>
-          </div>
-        </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+              </Button>
+
+              <div className="text-center pt-2">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => {
+                    setIsLogin(!isLogin)
+                    setError('')
+                  }}
+                  className="text-sm"
+                >
+                  {isLogin
+                    ? "Don't have an account? Sign up"
+                    : 'Already have an account? Sign in'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

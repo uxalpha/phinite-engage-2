@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StreakData } from '@/lib/types'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 
 export default function StreakPage() {
   const router = useRouter()
@@ -119,37 +123,38 @@ export default function StreakPage() {
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Streak Tracker</h1>
-            <p className="text-gray-600 mt-1">Keep the momentum going, {userName}</p>
+            <p className="text-muted-foreground mt-1">Keep the momentum going, {userName}</p>
           </div>
-          <button onClick={() => router.push('/dashboard')} className="btn">
+          <Button onClick={() => router.push('/dashboard')} variant="outline">
             Back to Dashboard
-          </button>
+          </Button>
         </div>
 
         {/* Main Streak Stats */}
-        <div className="card mb-8">
+        <Card className="mb-8">
+          <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Current Streak */}
             <div className="text-center">
               <div className="text-5xl font-bold mb-2">
                 {streakData.current_streak}
               </div>
-              <div className="text-sm text-gray-600 uppercase tracking-wide">Current Streak</div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-sm text-muted-foreground uppercase tracking-wide">Current Streak</div>
+              <div className="text-xs text-muted-foreground mt-1">
                 {streakData.current_streak === 1 ? 'day' : 'days'}
               </div>
             </div>
 
             {/* Current Multiplier */}
             <div className="text-center">
-              <div className={`inline-block px-6 py-3 text-4xl font-bold mb-2 ${getMultiplierBadgeColor(streakData.current_multiplier)}`}>
+              <Badge className={`px-6 py-3 text-4xl font-bold mb-2 ${getMultiplierBadgeColor(streakData.current_multiplier)}`}>
                 {streakData.current_multiplier.toFixed(1)}×
-              </div>
-              <div className="text-sm text-gray-600 uppercase tracking-wide">Multiplier</div>
-              <div className="text-xs text-gray-500 mt-1">
+              </Badge>
+              <div className="text-sm text-muted-foreground uppercase tracking-wide">Multiplier</div>
+              <div className="text-xs text-muted-foreground mt-1">
                 {streakData.grace_day_available ? 'Grace available' : 'Grace used'}
               </div>
             </div>
@@ -159,58 +164,66 @@ export default function StreakPage() {
               <div className="text-5xl font-bold mb-2">
                 {streakData.longest_streak}
               </div>
-              <div className="text-sm text-gray-600 uppercase tracking-wide">Best Streak</div>
-              <div className="text-xs text-gray-500 mt-1">personal record</div>
+              <div className="text-sm text-muted-foreground uppercase tracking-wide">Best Streak</div>
+              <div className="text-xs text-muted-foreground mt-1">personal record</div>
             </div>
           </div>
 
           {/* Next Milestone */}
           {nextMilestone && (
-            <div className="mt-6 pt-6 border-t border-gray-300 text-center">
-              <div className="text-sm text-gray-600">
-                {nextMilestone.remaining} more {nextMilestone.remaining === 1 ? 'day' : 'days'} to unlock <span className="font-bold">{nextMilestone.multiplier}</span> multiplier
+            <>
+              <Separator className="my-6" />
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground">
+                  {nextMilestone.remaining} more {nextMilestone.remaining === 1 ? 'day' : 'days'} to unlock <span className="font-bold">{nextMilestone.multiplier}</span> multiplier
+                </div>
+                <div className="mt-2 bg-secondary h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-primary h-2 transition-all duration-300"
+                    style={{ width: `${(streakData.current_streak / nextMilestone.target) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-2 bg-gray-200 h-2">
-                <div 
-                  className="bg-black h-2 transition-all duration-300"
-                  style={{ width: `${(streakData.current_streak / nextMilestone.target) * 100}%` }}
-                />
-              </div>
-            </div>
+            </>
           )}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* 7-Day Calendar */}
-        <div className="card mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Last 7 Days</h2>
-            <button 
-              onClick={() => setShowRules(!showRules)}
-              className="text-sm text-gray-600 hover:text-black"
-            >
-              ℹ Rules
-            </button>
-          </div>
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Last 7 Days</CardTitle>
+              <Button 
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowRules(!showRules)}
+              >
+                ℹ Rules
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
 
           {/* Calendar Strip */}
           <div className="grid grid-cols-7 gap-2">
             {streakData.calendar.map((day) => (
               <div 
                 key={day.date} 
-                className={`border-2 ${
+                className={`border-2 rounded-lg ${
                   day.status === 'verified' ? 'border-green-500 bg-green-50' :
                   day.status === 'grace_used' ? 'border-yellow-500 bg-yellow-50' :
-                  'border-gray-300 bg-gray-50'
+                  'border-border bg-muted'
                 } p-3 text-center`}
               >
-                <div className="text-xs text-gray-600 mb-2">
+                <div className="text-xs text-muted-foreground mb-2">
                   {formatDate(day.date)}
                 </div>
-                <div className={`w-10 h-10 mx-auto ${getStatusColor(day.status)} flex items-center justify-center text-white font-bold text-xl`}>
+                <div className={`w-10 h-10 mx-auto rounded-full ${getStatusColor(day.status)} flex items-center justify-center text-white font-bold text-xl`}>
                   {getStatusIcon(day.status)}
                 </div>
                 {day.submission_count > 0 && (
-                  <div className="text-xs text-gray-600 mt-2">
+                  <div className="text-xs text-muted-foreground mt-2">
                     {day.submission_count} {day.submission_count === 1 ? 'action' : 'actions'}
                   </div>
                 )}
@@ -219,26 +232,31 @@ export default function StreakPage() {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 pt-4 border-t border-gray-300 flex flex-wrap gap-4 text-xs">
+          <Separator className="my-4" />
+          <div className="flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500"></div>
+              <div className="w-4 h-4 bg-green-500 rounded"></div>
               <span>Verified</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-500"></div>
+              <div className="w-4 h-4 bg-yellow-500 rounded"></div>
               <span>Grace Day</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-500"></div>
+              <div className="w-4 h-4 bg-red-500 rounded"></div>
               <span>Missed</span>
             </div>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Streak Rules */}
         {showRules && (
-          <div className="card mb-8 bg-gray-50">
-            <h3 className="text-lg font-bold mb-4">Streak Rules</h3>
+          <Card className="mb-8 bg-muted/50">
+            <CardHeader>
+              <CardTitle>Streak Rules</CardTitle>
+            </CardHeader>
+            <CardContent>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start gap-2">
                 <span className="font-bold">•</span>
@@ -262,7 +280,8 @@ export default function StreakPage() {
               </li>
             </ul>
 
-            <div className="mt-4 pt-4 border-t border-gray-300">
+            <Separator className="my-4" />
+            <div>
               <h4 className="font-bold mb-2">Multiplier Milestones</h4>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start gap-2">
@@ -275,33 +294,39 @@ export default function StreakPage() {
                 </li>
               </ul>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Multiplier Impact */}
-        <div className="card">
-          <h2 className="text-xl font-bold mb-4">Multiplier Impact</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Multiplier Impact</CardTitle>
+          </CardHeader>
+          <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="text-3xl font-bold">{streakData.average_daily_points?.toFixed(1) || '0.0'}</div>
-              <div className="text-sm text-gray-600">Average Daily Points</div>
-              <div className="text-xs text-gray-500 mt-1">Last 7 days</div>
+              <div className="text-sm text-muted-foreground">Average Daily Points</div>
+              <div className="text-xs text-muted-foreground mt-1">Last 7 days</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600">+{streakData.multiplier_bonus?.toFixed(1) || '0.0'}</div>
-              <div className="text-sm text-gray-600">Bonus from Multiplier</div>
-              <div className="text-xs text-gray-500 mt-1">Extra points earned</div>
+              <div className="text-sm text-muted-foreground">Bonus from Multiplier</div>
+              <div className="text-xs text-muted-foreground mt-1">Extra points earned</div>
             </div>
           </div>
 
           {streakData.current_multiplier > 1.0 && (
-            <div className="mt-4 pt-4 border-t border-gray-300">
-              <p className="text-sm text-gray-600">
+            <>
+              <Separator className="my-4" />
+              <p className="text-sm text-muted-foreground">
                 Your {streakData.current_multiplier.toFixed(1)}× multiplier is applied to all future actions based on when you submit them. Keep your streak alive to maximize your earnings!
               </p>
-            </div>
+            </>
           )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

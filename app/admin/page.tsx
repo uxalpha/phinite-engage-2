@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Separator } from '@/components/ui/separator'
 
 interface Submission {
   id: string
@@ -193,153 +199,177 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h1 className="text-2xl md:text-3xl font-bold">Admin Panel</h1>
-          <div className="flex gap-2">
-            <button 
+          <div className="flex gap-2 flex-wrap">
+            <Button 
               onClick={checkPendingSubmissions} 
-              className="btn text-sm bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              size="sm"
               disabled={checkingPending}
             >
               {checkingPending ? '⏳ Checking...' : '🔄 Check Pending Status'}
-            </button>
-            <button onClick={fetchDebugInfo} className="btn text-sm">
+            </Button>
+            <Button onClick={fetchDebugInfo} size="sm" variant="outline">
               🔍 Debug Info
-            </button>
-            <button onClick={() => router.push('/dashboard')} className="btn">
+            </Button>
+            <Button onClick={() => router.push('/dashboard')} variant="outline">
               Back to Dashboard
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Check Result Message */}
         {checkResult && (
-          <div className={`mb-6 card ${checkResult.error ? 'bg-red-50 border-red-400' : 'bg-green-50 border-green-400'}`}>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-bold text-lg">
-                {checkResult.error ? '❌ Error' : '✅ Status Check Complete'}
-              </h3>
-              <button onClick={() => setCheckResult(null)} className="text-2xl leading-none">&times;</button>
-            </div>
-            {checkResult.error ? (
-              <p className="text-red-700">{checkResult.error}</p>
-            ) : (
-              <div className="space-y-2">
-                <p className="font-medium">{checkResult.message}</p>
-                <div className="text-sm">
-                  <div>Checked: {checkResult.checked} submissions</div>
-                  <div>Updated: {checkResult.updated} submissions</div>
-                </div>
-                {checkResult.results && checkResult.results.length > 0 && (
-                  <details className="mt-3">
-                    <summary className="cursor-pointer font-medium text-sm">View Details</summary>
-                    <div className="mt-2 space-y-1 text-xs">
-                      {checkResult.results.map((result: any, idx: number) => (
-                        <div key={idx} className="bg-white p-2 border border-gray-300 rounded">
-                          <div><strong>ID:</strong> {result.id}</div>
-                          <div><strong>Status:</strong> {result.status}</div>
-                          <div><strong>Message:</strong> {result.message}</div>
-                        </div>
-                      ))}
+          <Alert variant={checkResult.error ? "destructive" : "default"} className="mb-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <AlertTitle>
+                  {checkResult.error ? '❌ Error' : '✅ Status Check Complete'}
+                </AlertTitle>
+                <AlertDescription>
+                  {checkResult.error ? (
+                    <p>{checkResult.error}</p>
+                  ) : (
+                    <div className="space-y-2 mt-2">
+                      <p className="font-medium">{checkResult.message}</p>
+                      <div className="text-sm">
+                        <div>Checked: {checkResult.checked} submissions</div>
+                        <div>Updated: {checkResult.updated} submissions</div>
+                      </div>
+                      {checkResult.results && checkResult.results.length > 0 && (
+                        <Collapsible className="mt-3">
+                          <CollapsibleTrigger className="font-medium text-sm hover:underline">
+                            View Details
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-2 space-y-1 text-xs">
+                            {checkResult.results.map((result: any, idx: number) => (
+                              <div key={idx} className="bg-background p-2 border rounded">
+                                <div><strong>ID:</strong> {result.id}</div>
+                                <div><strong>Status:</strong> {result.status}</div>
+                                <div><strong>Message:</strong> {result.message}</div>
+                              </div>
+                            ))}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
                     </div>
-                  </details>
-                )}
+                  )}
+                </AlertDescription>
               </div>
-            )}
-          </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setCheckResult(null)}
+                className="ml-2"
+              >
+                &times;
+              </Button>
+            </div>
+          </Alert>
         )}
 
         {/* Debug Info Modal */}
         {showDebug && debugInfo && (
-          <div className="mb-6 card bg-yellow-50 border-yellow-400">
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="font-bold text-lg">Debug Information</h3>
-              <button onClick={() => setShowDebug(false)} className="text-2xl leading-none">&times;</button>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div>
-                <strong>Total Submissions:</strong> {debugInfo.total}
-              </div>
-              <div>
-                <strong>By Status:</strong>
-                <pre className="mt-1 bg-white p-2 border border-yellow-300 rounded overflow-auto max-h-40">
-                  {JSON.stringify(debugInfo.byStatus, null, 2)}
-                </pre>
-              </div>
-              <div>
-                <strong>Recent 10 Submissions:</strong>
-                <div className="mt-1 bg-white p-2 border border-yellow-300 rounded overflow-auto max-h-60">
-                  {debugInfo.recentSubmissions?.map((sub: any, idx: number) => (
-                    <div key={idx} className="border-b border-gray-200 py-2 last:border-b-0">
-                      <div><strong>User:</strong> {sub.user}</div>
-                      <div><strong>Status:</strong> {sub.status}</div>
-                      <div><strong>Action:</strong> {sub.action}</div>
-                      <div><strong>Workflow ID:</strong> {sub.workflow_id || 'N/A'}</div>
-                      <div className="text-xs text-gray-600">{new Date(sub.submitted).toLocaleString()}</div>
+          <Alert className="mb-6 bg-yellow-50 border-yellow-400">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <AlertTitle>Debug Information</AlertTitle>
+                <AlertDescription>
+                  <div className="space-y-3 text-sm mt-2">
+                    <div>
+                      <strong>Total Submissions:</strong> {debugInfo.total}
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <strong>By Status:</strong>
+                      <pre className="mt-1 bg-background p-2 border rounded overflow-auto max-h-40 text-xs">
+                        {JSON.stringify(debugInfo.byStatus, null, 2)}
+                      </pre>
+                    </div>
+                    <div>
+                      <strong>Recent 10 Submissions:</strong>
+                      <div className="mt-1 bg-background p-2 border rounded overflow-auto max-h-60">
+                        {debugInfo.recentSubmissions?.map((sub: any, idx: number) => (
+                          <div key={idx} className="border-b py-2 last:border-b-0">
+                            <div><strong>User:</strong> {sub.user}</div>
+                            <div><strong>Status:</strong> {sub.status}</div>
+                            <div><strong>Action:</strong> {sub.action}</div>
+                            <div><strong>Workflow ID:</strong> {sub.workflow_id || 'N/A'}</div>
+                            <div className="text-xs text-muted-foreground">{new Date(sub.submitted).toLocaleString()}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </AlertDescription>
               </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowDebug(false)}
+                className="ml-2"
+              >
+                &times;
+              </Button>
             </div>
-          </div>
+          </Alert>
         )}
 
-        <div className="card">
-          <h2 className="text-xl font-bold mb-4">Pending Manual Review - All Users</h2>
-          <p className="text-sm text-gray-600 mb-2">
-            Showing all submissions awaiting review (including your own submissions)
-          </p>
-          <p className="text-xs text-gray-500 mb-4">
-            💡 If you don't see recent submissions here, click <strong>🔄 Check Pending Status</strong> above to update submissions that are stuck in "pending" status.
-          </p>
-
-          {loading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : submissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-600">
-              No submissions pending review
-            </div>
-          ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Manual Review - All Users</CardTitle>
+            <CardDescription>
+              Showing all submissions awaiting review (including your own submissions)
+            </CardDescription>
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 If you don't see recent submissions here, click <strong>🔄 Check Pending Status</strong> above to update submissions that are stuck in "pending" status.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Loading...</div>
+            ) : submissions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No submissions pending review
+              </div>
+            ) : (
             <div className="space-y-6">
               {submissions.map((submission) => {
                 const isOwnSubmission = submission.users.email === currentUserEmail
                 return (
-                <div key={submission.id} className={`border-2 rounded-lg overflow-hidden ${
-                  isOwnSubmission ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
-                }`}>
-                  <div className="p-4">
+                <Card key={submission.id} className={isOwnSubmission ? 'border-blue-400 bg-blue-50' : ''}>
+                  <CardContent className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Image */}
                       <div>
                         <img
                           src={submission.image_url}
                           alt="Proof"
-                          className="w-full border border-gray-300 cursor-pointer hover:opacity-90 transition"
+                          className="w-full border rounded cursor-pointer hover:opacity-90 transition"
                           onClick={() => window.open(submission.image_url, '_blank')}
                         />
-                        <p className="text-xs text-gray-600 mt-2">Click to view full size</p>
+                        <p className="text-xs text-muted-foreground mt-2">Click to view full size</p>
                       </div>
 
                       {/* Basic Details */}
                       <div className="space-y-3">
                         <div>
-                          <div className="text-sm text-gray-600">User</div>
-                          <div className="font-medium">
+                          <div className="text-sm text-muted-foreground">User</div>
+                          <div className="font-medium flex items-center gap-2 flex-wrap">
                             {submission.users.name}
                             {isOwnSubmission && (
-                              <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded">YOUR SUBMISSION</span>
+                              <Badge className="bg-blue-600">YOUR SUBMISSION</Badge>
                             )}
                           </div>
-                          <div className="text-sm text-gray-600">{submission.users.email}</div>
+                          <div className="text-sm text-muted-foreground">{submission.users.email}</div>
                         </div>
 
                         <div>
-                          <div className="text-sm text-gray-600">User Claimed Action</div>
+                          <div className="text-sm text-muted-foreground">User Claimed Action</div>
                           <div className="font-medium text-lg">{submission.action_type.replace('_', ' ')}</div>
                         </div>
 
                         <div>
-                          <div className="text-sm text-gray-600">Submitted</div>
+                          <div className="text-sm text-muted-foreground">Submitted</div>
                           <div className="font-medium">
                             {new Date(submission.submitted_at).toLocaleString()}
                           </div>
@@ -347,8 +377,8 @@ export default function AdminPage() {
 
                         {submission.notes && (
                           <div>
-                            <div className="text-sm text-gray-600">User Notes</div>
-                            <div className="text-sm bg-gray-50 p-2 border border-gray-200 rounded">
+                            <div className="text-sm text-muted-foreground">User Notes</div>
+                            <div className="text-sm bg-muted p-2 border rounded">
                               {submission.notes}
                             </div>
                           </div>
@@ -357,32 +387,34 @@ export default function AdminPage() {
                     </div>
 
                     {/* AI Insights Section */}
-                    <div className="mt-4 pt-4 border-t border-gray-300">
-                      <button
-                        onClick={() => setExpandedSubmission(expandedSubmission === submission.id ? null : submission.id)}
-                        className="flex items-center justify-between w-full text-left font-semibold text-lg mb-2 hover:text-gray-600"
-                      >
-                        <span>🤖 AI Analysis & Insights</span>
-                        <span className="text-2xl">{expandedSubmission === submission.id ? '−' : '+'}</span>
-                      </button>
+                    <Separator className="my-4" />
+                    <Collapsible
+                      open={expandedSubmission === submission.id}
+                      onOpenChange={() => setExpandedSubmission(expandedSubmission === submission.id ? null : submission.id)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" className="w-full justify-between p-0 h-auto font-semibold text-lg mb-4 hover:bg-transparent">
+                          <span>🤖 AI Analysis & Insights</span>
+                          <span className="text-2xl">{expandedSubmission === submission.id ? '−' : '+'}</span>
+                        </Button>
+                      </CollapsibleTrigger>
 
                       {/* Quick AI Summary (Always Visible) */}
-                      {/* First Row - AI Detected Action (Full Width) */}
                       <div className="bg-blue-50 p-3 border border-blue-200 rounded mb-3">
-                        <div className="text-xs text-gray-600">AI Detected Action</div>
+                        <div className="text-xs text-muted-foreground">AI Detected Action</div>
                         <div className="font-bold text-lg">{submission.primary_action || 'N/A'}</div>
                       </div>
 
                       {/* Second Row - Other Three Panels */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <div className="bg-green-50 p-3 border border-green-200 rounded">
-                          <div className="text-xs text-gray-600">Confidence</div>
+                          <div className="text-xs text-muted-foreground">Confidence</div>
                           <div className="font-bold text-sm">
                             {submission.action_confidence ? `${(submission.action_confidence * 100).toFixed(0)}%` : 'N/A'}
                           </div>
                         </div>
                         <div className="bg-purple-50 p-3 border border-purple-200 rounded">
-                          <div className="text-xs text-gray-600">Suggested Points</div>
+                          <div className="text-xs text-muted-foreground">Suggested Points</div>
                           <div className="font-bold text-sm">{submission.assigned_points || 0}</div>
                         </div>
                         <div className={`p-3 border rounded ${
@@ -390,14 +422,14 @@ export default function AdminPage() {
                           submission.duplicate_risk === 'MEDIUM' ? 'bg-yellow-50 border-yellow-200' : 
                           'bg-green-50 border-green-200'
                         }`}>
-                          <div className="text-xs text-gray-600">Duplicate Risk</div>
+                          <div className="text-xs text-muted-foreground">Duplicate Risk</div>
                           <div className="font-bold text-sm">{submission.duplicate_risk || 'N/A'}</div>
                         </div>
                       </div>
 
                       {/* Detailed AI Insights (Expandable) */}
-                      {expandedSubmission === submission.id && (
-                        <div className="space-y-3 bg-gray-50 p-4 border border-gray-200 rounded">
+                      <CollapsibleContent>
+                        <div className="space-y-3 bg-muted p-4 border rounded mt-3">
                           <div>
                             <div className="text-sm font-semibold mb-2">Platform Detection</div>
                             <div className="text-sm">
@@ -444,7 +476,7 @@ export default function AdminPage() {
                           {submission.admin_notes && (
                             <div>
                               <div className="text-sm font-semibold mb-2">AI Recommendation</div>
-                              <div className="text-sm bg-white p-3 border border-gray-300 rounded">
+                              <div className="text-sm bg-background p-3 border rounded">
                                 {submission.admin_notes}
                               </div>
                             </div>
@@ -453,71 +485,79 @@ export default function AdminPage() {
                           {submission.workflow_id && (
                             <div>
                               <div className="text-sm font-semibold mb-1">Workflow ID</div>
-                              <div className="text-xs text-gray-600 font-mono">{submission.workflow_id}</div>
+                              <div className="text-xs text-muted-foreground font-mono">{submission.workflow_id}</div>
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      </CollapsibleContent>
+                    </Collapsible>
 
                     {/* Action Buttons */}
-                    <div className="mt-4 pt-4 border-t border-gray-300">
-                      <div className="text-sm font-semibold mb-2">Admin Decision</div>
+                    <Separator className="my-4" />
+                    <div>
+                      <div className="text-sm font-semibold mb-3">Admin Decision</div>
                       <div className="space-y-2">
                         <div className="grid grid-cols-3 gap-2">
-                          <button
+                          <Button
                             onClick={() => handleApprove(submission.id, 5)}
-                            className="btn text-sm"
+                            size="sm"
+                            variant="outline"
                             disabled={processing === submission.id}
                           >
                             Approve: Like (5)
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleApprove(submission.id, 10)}
-                            className="btn text-sm"
+                            size="sm"
+                            variant="outline"
                             disabled={processing === submission.id}
                           >
                             Approve: Comment (10)
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleApprove(submission.id, 15)}
-                            className="btn text-sm"
+                            size="sm"
+                            variant="outline"
                             disabled={processing === submission.id}
                           >
                             Approve: Repost (15)
-                          </button>
+                          </Button>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                          <button
+                          <Button
                             onClick={() => handleApprove(submission.id, 20)}
-                            className="btn text-sm"
+                            size="sm"
+                            variant="outline"
                             disabled={processing === submission.id}
                           >
                             Approve: Tag (20)
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleApprove(submission.id, 25)}
-                            className="btn text-sm"
+                            size="sm"
+                            variant="outline"
                             disabled={processing === submission.id}
                           >
                             Approve: Original (25)
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleReject(submission.id)}
-                            className="btn text-sm bg-red-600 text-white hover:bg-red-700 border-red-600"
+                            size="sm"
+                            variant="destructive"
                             disabled={processing === submission.id}
                           >
                             ✗ Reject
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )})}
             </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
