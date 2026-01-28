@@ -10,6 +10,11 @@ CREATE TABLE users (
   password_hash TEXT NOT NULL,
   name TEXT NOT NULL,
   total_points INTEGER DEFAULT 0,
+  current_streak INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0,
+  last_activity_date DATE,
+  grace_day_used BOOLEAN DEFAULT FALSE,
+  grace_day_date DATE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -36,6 +41,7 @@ CREATE TABLE submissions (
   -- Verification Status
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected', 'manual_review')),
   points_awarded INTEGER DEFAULT 0,
+  streak_multiplier NUMERIC(2,1) DEFAULT 1.0,
   notes TEXT,
   admin_notes TEXT,
   

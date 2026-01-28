@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { authenticateUser } from '@/lib/middleware'
 import { ActionType } from '@/lib/types'
+import { calculateStreakStatus, getStreakMultiplier } from '@/lib/streak'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     const actionType = formData.get('action_type') as ActionType
     const file = formData.get('file') as File
     const notes = formData.get('notes') as string | null
+    const timezoneOffset = parseInt(formData.get('timezone') as string || '0')
 
     // Validation
     if (!actionType || !file) {
@@ -121,6 +123,10 @@ export async function POST(request: NextRequest) {
 
     const imageUrl = urlData.publicUrl
 
+    // Calculate current streak multiplier at submission time
+    const streakData = await calculateStreakStatus(auth.userId, timezoneOffset)
+    const currentMultiplier = getStreakMultiplier(streakData.current_streak)
+
     // Call AI Trigger Start API (async verification; client polls /api/submit/status)
     const aiStartUrl = getAiStartUrl()
     const aiApiKey = process.env.AI_VERIFICATION_API_KEY!
@@ -137,6 +143,7 @@ export async function POST(request: NextRequest) {
       image_url: imageUrl,
       status: 'pending',
       points_awarded: 0,
+      streak_multiplier: currentMultiplier,
       notes,
       verified_at: null,
     }

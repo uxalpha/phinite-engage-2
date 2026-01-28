@@ -367,11 +367,14 @@ export default function AdminPage() {
                       </button>
 
                       {/* Quick AI Summary (Always Visible) */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                        <div className="bg-blue-50 p-3 border border-blue-200 rounded">
-                          <div className="text-xs text-gray-600">AI Detected Action</div>
-                          <div className="font-bold text-sm">{submission.primary_action || 'N/A'}</div>
-                        </div>
+                      {/* First Row - AI Detected Action (Full Width) */}
+                      <div className="bg-blue-50 p-3 border border-blue-200 rounded mb-3">
+                        <div className="text-xs text-gray-600">AI Detected Action</div>
+                        <div className="font-bold text-lg">{submission.primary_action || 'N/A'}</div>
+                      </div>
+
+                      {/* Second Row - Other Three Panels */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <div className="bg-green-50 p-3 border border-green-200 rounded">
                           <div className="text-xs text-gray-600">Confidence</div>
                           <div className="font-bold text-sm">

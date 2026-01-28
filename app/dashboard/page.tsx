@@ -47,9 +47,26 @@ export default function DashboardPage() {
     }
 
     setUser(JSON.parse(userData))
+    fetchUserData(token)
     fetchSubmissions(token)
   }, [router])
 
+
+  const fetchUserData = async (token: string) => {
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await response.json()
+      if (response.ok && data.user) {
+        setUser(data.user)
+        // Update localStorage with fresh user data
+        localStorage.setItem('user', JSON.stringify(data.user))
+      }
+    } catch (err) {
+      console.error('Failed to fetch user data:', err)
+    }
+  }
 
   const fetchSubmissions = async (token: string) => {
     try {
@@ -91,6 +108,9 @@ export default function DashboardPage() {
       if (formData.notes) {
         formDataToSend.append('notes', formData.notes)
       }
+      // Add timezone offset for streak calculation
+      const timezoneOffset = -new Date().getTimezoneOffset()
+      formDataToSend.append('timezone', timezoneOffset.toString())
 
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -112,7 +132,8 @@ export default function DashboardPage() {
       const fileInput = document.getElementById('file') as HTMLInputElement
       if (fileInput) fileInput.value = ''
 
-      // Refresh submissions to show the new pending entry
+      // Refresh user data and submissions to show updates
+      fetchUserData(token)
       fetchSubmissions(token)
     } catch (err: any) {
       setError(err.message)
@@ -154,6 +175,9 @@ export default function DashboardPage() {
         {/* Navigation */}
         <div className="flex gap-4 mb-8 border-b border-gray-300 pb-4">
           <button className="font-medium border-b-2 border-black pb-2">Submit Proof</button>
+          <button onClick={() => router.push('/streak')} className="text-gray-600 hover:text-black pb-2">
+            Streak
+          </button>
           <button onClick={() => router.push('/leaderboard')} className="text-gray-600 hover:text-black pb-2">
             Leaderboard
           </button>

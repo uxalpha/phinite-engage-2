@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { authenticateAdmin } from '@/lib/middleware'
-import { getCurrentMonth } from '@/lib/utils'
+import { getCurrentMonth, calculatePointsWithMultiplier } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,12 +37,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Apply streak multiplier to calculate final points
+    const streakMultiplier = submission.streak_multiplier || 1.0
+    const finalPoints = calculatePointsWithMultiplier(points, streakMultiplier)
+
     // Update submission
     const { error: updateError } = await supabaseAdmin
       .from('submissions')
       .update({
         status: 'verified',
-        points_awarded: points,
+        points_awarded: finalPoints,
         admin_notes,
         verified_at: new Date().toISOString()
       })
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin
         .from('users')
         .update({
-          total_points: currentUser.total_points + points
+          total_points: currentUser.total_points + finalPoints
         })
         .eq('id', submission.user_id)
     }
@@ -85,7 +89,7 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin
         .from('monthly_points')
         .update({
-          points: currentMonthly.points + points
+          points: currentMonthly.points + finalPoints
         })
         .eq('user_id', submission.user_id)
         .eq('month', month)
@@ -95,13 +99,15 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: submission.user_id,
           month,
-          points
+          points: finalPoints
         })
     }
 
     return NextResponse.json({
       message: 'Submission approved successfully',
-      points_awarded: points
+      base_points: points,
+      streak_multiplier: streakMultiplier,
+      points_awarded: finalPoints
     })
   } catch (error) {
     console.error('Approve error:', error)

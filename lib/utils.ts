@@ -65,3 +65,13 @@ export function extractActionFromAI(primaryAction: string): string {
   
   return 'LIKE' // Default fallback
 }
+
+export function getStreakMultiplier(streakDays: number): number {
+  if (streakDays >= 10) return 2.0
+  if (streakDays >= 5) return 1.5
+  return 1.0
+}
+
+export function calculatePointsWithMultiplier(basePoints: number, multiplier: number): number {
+  return Math.round(basePoints * multiplier)
+}

@@ -3,6 +3,11 @@ export interface User {
   email: string
   name: string
   total_points: number
+  current_streak?: number
+  longest_streak?: number
+  last_activity_date?: string | null
+  grace_day_used?: boolean
+  grace_day_date?: string | null
   created_at: string
 }
 
@@ -28,6 +33,7 @@ export interface Submission {
   // Status
   status: SubmissionStatus
   points_awarded: number
+  streak_multiplier?: number
   notes?: string
   admin_notes?: string
   
@@ -86,3 +92,21 @@ export interface AIVerificationResponse {
 // and later return the full AIVerificationResponse.
 export type AIVerificationResponseMaybe =
   Partial<AIVerificationResponse> & { status?: string; workflow_id?: string }
+
+export interface StreakData {
+  current_streak: number
+  longest_streak: number
+  current_multiplier: number
+  grace_day_available: boolean
+  grace_used_date: string | null
+  last_activity_date: string | null
+  calendar: DayStatus[]
+  average_daily_points?: number
+  multiplier_bonus?: number
+}
+
+export interface DayStatus {
+  date: string
+  status: 'verified' | 'missed' | 'grace_used'
+  submission_count: number
+}
