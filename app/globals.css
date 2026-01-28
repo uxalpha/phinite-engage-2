@@ -29,6 +29,15 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    
+    /* Playful Streak Theme Colors */
+    --streak-purple: #7a44ff;
+    --streak-yellow: #FFD60A;
+    --streak-orange: #FF9500;
+    --streak-green: #58CC02;
+    --streak-warning: #FF9600;
+    --streak-gray: #F7F7F7;
+    --streak-cream: #FFF9E6;
   }
 
   .dark {
@@ -65,4 +74,92 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Playful Streak Animations */
+@keyframes fireFlicker {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes progressRingFill {
+  0% {
+    stroke-dashoffset: 283;
+  }
+  100% {
+    stroke-dashoffset: var(--progress-offset);
+  }
+}
+
+@keyframes cardHoverLift {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  100% {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+}
+
+@keyframes tapFeedback {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fire-flicker {
+  animation: fireFlicker 2s ease-in-out infinite;
+}
+
+.animate-check-bounce {
+  animation: checkBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-progress-ring {
+  animation: progressRingFill 1s ease-out forwards;
+}
+
+.animate-card-hover:hover {
+  animation: cardHoverLift 0.2s ease-out forwards;
+}
+
+.animate-tap-feedback:active {
+  animation: tapFeedback 0.1s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
 }

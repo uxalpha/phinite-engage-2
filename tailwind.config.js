@@ -62,12 +62,27 @@ module.exports = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+  			// Playful Streak Theme Colors
+  			'streak-purple': 'var(--streak-purple)',
+  			'streak-yellow': 'var(--streak-yellow)',
+  			'streak-orange': 'var(--streak-orange)',
+  			'streak-green': 'var(--streak-green)',
+  			'streak-warning': 'var(--streak-warning)',
+  			'streak-gray': 'var(--streak-gray)',
+  			'streak-cream': 'var(--streak-cream)',
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			xl: '1.5rem',
+  			'2xl': '2rem',
+  		},
+  		boxShadow: {
+  			'card': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  			'card-hover': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  			'card-lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
   		}
   	}
   },
