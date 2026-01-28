@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import UserMenu from '@/components/UserMenu'
 import NotificationBell from '@/components/NotificationBell'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 interface LeaderboardEntry {
   id: string
@@ -32,6 +33,9 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+    const abortController = new AbortController()
+
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
     
@@ -40,31 +44,43 @@ export default function LeaderboardPage() {
       return
     }
 
-    setUser(JSON.parse(userData))
-    fetchLeaderboard()
-  }, [router])
-
-  const fetchLeaderboard = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/leaderboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      const data = await response.json()
-      
-      if (response.ok) {
-        setLeaderboard(data.leaderboard)
-        setMonth(data.month)
-        setCurrentUserEntry(data.currentUser || null)
-      }
-    } catch (err) {
-      console.error('Failed to fetch leaderboard:', err)
-    } finally {
-      setLoading(false)
+    if (isMounted) {
+      setUser(JSON.parse(userData))
     }
-  }
+
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch('/api/leaderboard', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          signal: abortController.signal
+        })
+        const data = await response.json()
+        
+        if (response.ok && isMounted) {
+          setLeaderboard(data.leaderboard)
+          setMonth(data.month)
+          setCurrentUserEntry(data.currentUser || null)
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch leaderboard:', err)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchLeaderboard()
+
+    return () => {
+      isMounted = false
+      abortController.abort()
+    }
+  }, [router])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -97,7 +113,8 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-streak-gray p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -288,5 +305,6 @@ export default function LeaderboardPage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

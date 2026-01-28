@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import UserMenu from '@/components/UserMenu'
 import NotificationBell from '@/components/NotificationBell'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { generateBlurDataURL } from '@/lib/imageUtils'
 
 interface User {
   id: string
@@ -35,6 +38,9 @@ export default function RecentSubmissionsPage() {
   const [filter, setFilter] = useState<'all' | 'verified' | 'pending' | 'rejected'>('all')
 
   useEffect(() => {
+    let isMounted = true
+    const abortController = new AbortController()
+
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
 
@@ -44,41 +50,57 @@ export default function RecentSubmissionsPage() {
     }
 
     const userObj = JSON.parse(userData)
-    setUser(userObj)
-    fetchUserData(token)
-    fetchSubmissions(token)
+    if (isMounted) {
+      setUser(userObj)
+    }
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: abortController.signal
+        })
+        const data = await response.json()
+        if (response.ok && data.user && isMounted) {
+          setUser(data.user)
+          localStorage.setItem('user', JSON.stringify(data.user))
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch user data:', err)
+        }
+      }
+    }
+
+    const fetchSubmissions = async () => {
+      try {
+        const response = await fetch('/api/submissions', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: abortController.signal
+        })
+        const data = await response.json()
+        if (response.ok && isMounted) {
+          setSubmissions(data.submissions)
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch submissions:', err)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchUserData()
+    fetchSubmissions()
+
+    return () => {
+      isMounted = false
+      abortController.abort()
+    }
   }, [router])
-
-  const fetchUserData = async (token: string) => {
-    try {
-      const response = await fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
-      if (response.ok && data.user) {
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
-      }
-    } catch (err) {
-      console.error('Failed to fetch user data:', err)
-    }
-  }
-
-  const fetchSubmissions = async (token: string) => {
-    try {
-      const response = await fetch('/api/submissions', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
-      if (response.ok) {
-        setSubmissions(data.submissions)
-      }
-    } catch (err) {
-      console.error('Failed to fetch submissions:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -123,7 +145,8 @@ export default function RecentSubmissionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8 pb-24">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-streak-gray p-4 md:p-8 pb-24">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -226,10 +249,15 @@ export default function RecentSubmissionsPage() {
               >
                 {/* Image */}
                 <div className="relative h-48 bg-gray-100 overflow-hidden">
-                  <img
+                  <Image
                     src={submission.image_url}
                     alt="Submission proof"
+                    width={800}
+                    height={600}
                     className="w-full h-full object-cover"
+                    placeholder="blur"
+                    blurDataURL={generateBlurDataURL()}
+                    loading="lazy"
                   />
                   <div className="absolute top-3 left-3">
                     {getStatusBadge(submission.status)}
@@ -337,5 +365,6 @@ export default function RecentSubmissionsPage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

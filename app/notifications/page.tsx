@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import UserMenu from '@/components/UserMenu'
 import NotificationBell from '@/components/NotificationBell'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 export default function NotificationsPage() {
   const router = useRouter()
@@ -18,6 +19,9 @@ export default function NotificationsPage() {
   const markedAsReadRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
+    let isMounted = true
+    const abortController = new AbortController()
+
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
 
@@ -27,9 +31,39 @@ export default function NotificationsPage() {
     }
 
     const userObj = JSON.parse(userData)
-    setUser(userObj)
-    fetchNotifications(token)
-  }, [router])
+    if (isMounted) {
+      setUser(userObj)
+    }
+
+    const fetchNotifications = async () => {
+      try {
+        const url = filter === 'unread' ? '/api/notifications?unread_only=true' : '/api/notifications'
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: abortController.signal
+        })
+        const data = await response.json()
+        if (response.ok && isMounted) {
+          setNotifications(data.notifications)
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch notifications:', err)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchNotifications()
+
+    return () => {
+      isMounted = false
+      abortController.abort()
+    }
+  }, [router, filter])
 
   useEffect(() => {
     // Set up Intersection Observer for viewport-based read tracking
@@ -84,22 +118,6 @@ export default function NotificationsPage() {
     }
   }, [notifications])
 
-  const fetchNotifications = async (token: string) => {
-    try {
-      const url = filter === 'unread' ? '/api/notifications?unread_only=true' : '/api/notifications'
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const data = await response.json()
-      if (response.ok) {
-        setNotifications(data.notifications)
-      }
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const markNotificationAsRead = async (notificationId: string) => {
     const token = localStorage.getItem('token')
@@ -203,7 +221,8 @@ export default function NotificationsPage() {
   const filteredNotifications = filter === 'unread' ? notifications.filter((n) => !n.is_read) : notifications
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-streak-gray p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -332,5 +351,6 @@ export default function NotificationsPage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

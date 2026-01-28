@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Separator } from '@/components/ui/separator'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { generateBlurDataURL } from '@/lib/imageUtils'
 
 interface Submission {
   id: string
@@ -197,7 +200,8 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <ErrorBoundary>
+      <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h1 className="text-2xl md:text-3xl font-bold">Admin Panel</h1>
@@ -341,12 +345,21 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Image */}
                       <div>
-                        <img
-                          src={submission.image_url}
-                          alt="Proof"
-                          className="w-full border rounded cursor-pointer hover:opacity-90 transition"
+                        <div
+                          className="relative w-full h-auto border rounded cursor-pointer hover:opacity-90 transition overflow-hidden"
                           onClick={() => window.open(submission.image_url, '_blank')}
-                        />
+                        >
+                          <Image
+                            src={submission.image_url}
+                            alt="Proof"
+                            width={800}
+                            height={600}
+                            className="w-full h-auto"
+                            placeholder="blur"
+                            blurDataURL={generateBlurDataURL()}
+                            loading="lazy"
+                          />
+                        </div>
                         <p className="text-xs text-muted-foreground mt-2">Click to view full size</p>
                       </div>
 
@@ -560,5 +573,6 @@ export default function AdminPage() {
         </Card>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

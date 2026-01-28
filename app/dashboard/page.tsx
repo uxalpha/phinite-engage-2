@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import UserMenu from '@/components/UserMenu'
 import NotificationBell from '@/components/NotificationBell'
 import SubmissionFAB from '@/components/SubmissionFAB'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 // Progress Ring Component
 const ProgressRing = ({ progress, total, size = 120, strokeWidth = 12 }: { progress: number; total: number; size?: number; strokeWidth?: number }) => {
@@ -110,6 +111,9 @@ export default function DashboardPage() {
   const [showRules, setShowRules] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
+    const abortController = new AbortController()
+
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
 
@@ -119,47 +123,63 @@ export default function DashboardPage() {
     }
 
     const userObj = JSON.parse(userData)
-    setUser(userObj)
-    fetchUserData(token)
-    fetchStreakData(token)
+    if (isMounted) {
+      setUser(userObj)
+    }
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: abortController.signal
+        })
+        const data = await response.json()
+        if (response.ok && data.user && isMounted) {
+          setUser(data.user)
+          localStorage.setItem('user', JSON.stringify(data.user))
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch user data:', err)
+        }
+      }
+    }
+
+    const fetchStreakData = async () => {
+      try {
+        const timezoneOffset = -new Date().getTimezoneOffset()
+        
+        const response = await fetch(`/api/streak?timezone=${timezoneOffset}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: abortController.signal
+        })
+        
+        const data = await response.json()
+        
+        if (response.ok && isMounted) {
+          setStreakData(data)
+        } else {
+          console.error('Failed to fetch streak data:', data.error)
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch streak data:', err)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchUserData()
+    fetchStreakData()
+
+    return () => {
+      isMounted = false
+      abortController.abort()
+    }
   }, [router])
-
-  const fetchUserData = async (token: string) => {
-    try {
-      const response = await fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
-      if (response.ok && data.user) {
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
-      }
-    } catch (err) {
-      console.error('Failed to fetch user data:', err)
-    }
-  }
-
-  const fetchStreakData = async (token: string) => {
-    try {
-      const timezoneOffset = -new Date().getTimezoneOffset()
-      
-      const response = await fetch(`/api/streak?timezone=${timezoneOffset}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      
-      const data = await response.json()
-      
-      if (response.ok) {
-        setStreakData(data)
-      } else {
-        console.error('Failed to fetch streak data:', data.error)
-      }
-    } catch (err) {
-      console.error('Failed to fetch streak data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00')
@@ -199,7 +219,8 @@ export default function DashboardPage() {
   const todayIndex = getTodayIndex()
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-streak-gray p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -463,5 +484,6 @@ export default function DashboardPage() {
         <SubmissionFAB />
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

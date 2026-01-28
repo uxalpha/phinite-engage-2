@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { User } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,12 +40,14 @@ export default function UserMenu({ user }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="relative h-10 w-10 rounded-full border-2 border-gray-200 hover:border-streak-purple transition-colors"
+          className="relative h-10 w-10 rounded-full border-2 border-gray-200 hover:border-streak-purple transition-colors overflow-hidden"
         >
           {user.profile_image_url ? (
-            <img
+            <Image
               src={user.profile_image_url}
               alt={user.name}
+              width={40}
+              height={40}
               className="h-full w-full rounded-full object-cover"
             />
           ) : (

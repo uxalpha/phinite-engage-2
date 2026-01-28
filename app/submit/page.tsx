@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import UserMenu from '@/components/UserMenu'
 import NotificationBell from '@/components/NotificationBell'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { compressImage, isValidImageFile, isValidImageSize } from '@/lib/imageUtils'
 
 interface User {
   id: string
@@ -24,6 +26,7 @@ export default function SubmitPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [compressing, setCompressing] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -34,6 +37,8 @@ export default function SubmitPage() {
   })
 
   useEffect(() => {
+    let isMounted = true
+
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
 
@@ -42,7 +47,13 @@ export default function SubmitPage() {
       return
     }
 
-    setUser(JSON.parse(userData))
+    if (isMounted) {
+      setUser(JSON.parse(userData))
+    }
+
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,10 +74,28 @@ export default function SubmitPage() {
       return
     }
 
+    // Validate file type and size
+    if (!isValidImageFile(formData.file)) {
+      setError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.')
+      setSubmitting(false)
+      return
+    }
+
+    if (!isValidImageSize(formData.file, 10)) {
+      setError('File size must be less than 10MB')
+      setSubmitting(false)
+      return
+    }
+
     try {
+      // Compress image before uploading
+      setCompressing(true)
+      const compressedFile = await compressImage(formData.file)
+      setCompressing(false)
+
       const formDataToSend = new FormData()
       formDataToSend.append('action_type', formData.action_type)
-      formDataToSend.append('file', formData.file)
+      formDataToSend.append('file', compressedFile)
       if (formData.notes) {
         formDataToSend.append('notes', formData.notes)
       }
@@ -99,6 +128,7 @@ export default function SubmitPage() {
       setError(err.message)
     } finally {
       setSubmitting(false)
+      setCompressing(false)
     }
   }
 
@@ -124,7 +154,8 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-streak-gray p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -260,9 +291,13 @@ export default function SubmitPage() {
                 <Button 
                   type="submit" 
                   className="w-full h-14 text-lg font-bold rounded-xl bg-streak-purple hover:bg-streak-purple/90" 
-                  disabled={submitting}
+                  disabled={submitting || compressing}
                 >
-                  {submitting ? (
+                  {compressing ? (
+                    <>
+                      <span className="animate-pulse">Compressing image...</span>
+                    </>
+                  ) : submitting ? (
                     <>
                       <span className="animate-pulse">Submitting...</span>
                     </>
@@ -360,5 +395,6 @@ export default function SubmitPage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

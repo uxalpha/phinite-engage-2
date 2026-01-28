@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import UserMenu from '@/components/UserMenu'
 import NotificationBell from '@/components/NotificationBell'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { compressImage, isValidImageFile, isValidImageSize } from '@/lib/imageUtils'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -23,6 +25,7 @@ export default function SettingsPage() {
   const [profileMessage, setProfileMessage] = useState('')
   const [profileError, setProfileError] = useState('')
   const [profileSaving, setProfileSaving] = useState(false)
+  const [compressing, setCompressing] = useState(false)
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -33,6 +36,8 @@ export default function SettingsPage() {
   const [passwordSaving, setPasswordSaving] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
+
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
 
@@ -41,16 +46,34 @@ export default function SettingsPage() {
       return
     }
 
-    const userObj = JSON.parse(userData)
-    setUser(userObj)
-    setName(userObj.name)
-    setProfileImageUrl(userObj.profile_image_url || '')
-    setLoading(false)
+    if (isMounted) {
+      const userObj = JSON.parse(userData)
+      setUser(userObj)
+      setName(userObj.name)
+      setProfileImageUrl(userObj.profile_image_url || '')
+      setLoading(false)
+    }
+
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file
+      if (!isValidImageFile(file)) {
+        setProfileError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.')
+        return
+      }
+      
+      if (!isValidImageSize(file, 5)) {
+        setProfileError('File size must be less than 5MB')
+        return
+      }
+
+      setProfileError('')
       setAvatarFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -76,8 +99,13 @@ export default function SettingsPage() {
 
       // Upload avatar if file selected
       if (avatarFile) {
+        // Compress image before uploading
+        setCompressing(true)
+        const compressedFile = await compressImage(avatarFile)
+        setCompressing(false)
+
         const formData = new FormData()
-        formData.append('file', avatarFile)
+        formData.append('file', compressedFile)
 
         const uploadResponse = await fetch('/api/user/upload-avatar', {
           method: 'POST',
@@ -126,6 +154,7 @@ export default function SettingsPage() {
       setProfileError(err.message)
     } finally {
       setProfileSaving(false)
+      setCompressing(false)
     }
   }
 
@@ -192,7 +221,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-streak-gray p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -320,10 +350,10 @@ export default function SettingsPage() {
 
             <Button
               onClick={handleProfileUpdate}
-              disabled={profileSaving || !name.trim()}
+              disabled={profileSaving || compressing || !name.trim()}
               className="w-full md:w-auto bg-streak-purple hover:bg-streak-purple/90 rounded-xl"
             >
-              {profileSaving ? 'Saving...' : 'Save Profile'}
+              {compressing ? 'Compressing...' : profileSaving ? 'Saving...' : 'Save Profile'}
             </Button>
           </div>
         </div>
@@ -406,5 +436,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }
