@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { StreakData } from '@/lib/types'
+import { StreakData, User } from '@/lib/types'
 import { Button } from '@/components/ui/button'
+import UserMenu from '@/components/UserMenu'
+import NotificationBell from '@/components/NotificationBell'
+import SubmissionFAB from '@/components/SubmissionFAB'
 
 // Progress Ring Component
 const ProgressRing = ({ progress, total, size = 120, strokeWidth = 12 }: { progress: number; total: number; size?: number; strokeWidth?: number }) => {
@@ -99,13 +102,6 @@ const DayCircle = ({ status, day, isToday, submissionCount }: { status: string; 
   )
 }
 
-interface User {
-  id: string
-  name: string
-  email: string
-  total_points: number
-}
-
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -165,12 +161,6 @@ export default function DashboardPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/auth')
-  }
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00')
     return date.toLocaleDateString('en-US', { weekday: 'short' })
@@ -213,19 +203,14 @@ export default function DashboardPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black">Hey, {user.name.split(' ')[0]}! 👋</h1>
-              <p className="text-muted-foreground mt-1">Keep the momentum going</p>
+          <div className="flex flex-row justify-between items-start gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black">Hey, {user.name.split(' ')[0]}! 👋</h1>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">Keep the momentum going</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Total Points</div>
-                <div className="text-2xl font-bold text-streak-purple">{user.total_points}</div>
-              </div>
-              <Button onClick={handleLogout} variant="outline" size="sm" className="rounded-full">
-                Logout
-              </Button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <NotificationBell unreadCount={user.unread_notifications_count || 0} />
+              <UserMenu user={user as User} />
             </div>
           </div>
         </div>
@@ -266,30 +251,49 @@ export default function DashboardPage() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           
-          {/* Hero Streak Card */}
-          <div className="md:col-span-1 lg:col-span-1">
+          {/* Hero Yellow Stats Card - Consolidated */}
+          <div className="md:col-span-2 lg:col-span-3">
             <div 
-              className="relative overflow-hidden rounded-2xl p-8 text-center shadow-card-lg animate-card-hover transition-all duration-200"
+              className="relative overflow-hidden rounded-2xl p-8 md:p-10 text-center shadow-card-lg animate-card-hover transition-all duration-200"
               style={{
                 background: 'linear-gradient(135deg, #FFD60A 0%, #FF9500 100%)'
               }}
             >
-              <div className="text-7xl md:text-8xl font-black text-gray-900 mb-2">
+              
+              <div className="flex justify-center mb-4 animate-fire-flicker">
+                <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <span className="text-5xl">🔥</span>
+                </div>
+              </div>
+              <div className="text-6xl md:text-7xl font-black text-gray-900 mb-2">
                 {streakData.current_streak}
               </div>
-              <div className="text-xl font-semibold text-gray-800 mb-6">
-                Streak Days
+              <div className="text-xl md:text-2xl font-semibold text-gray-800 mb-8">
+                DAY STREAK
               </div>
-              <div className="flex justify-center animate-fire-flicker">
-                <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <span className="text-6xl">🔥</span>
+              
+              {/* Bottom Stats Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 max-w-2xl mx-auto">
+                <div className="flex items-center justify-center gap-3 bg-white bg-opacity-20 rounded-2xl p-4">
+                  <span className="text-3xl">💎</span>
+                  <div className="text-left">
+                    <div className="text-2xl md:text-3xl font-black text-gray-900">{user.total_points}</div>
+                    <div className="text-sm text-gray-700 font-medium">Total Points</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-3 bg-white bg-opacity-20 rounded-2xl p-4">
+                  <span className="text-3xl">🏆</span>
+                  <div className="text-left">
+                    <div className="text-2xl md:text-3xl font-black text-gray-900">{streakData.longest_streak}</div>
+                    <div className="text-sm text-gray-700 font-medium">Personal Best</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Daily Goal Card */}
-          <div className="md:col-span-1 lg:col-span-2">
+          <div className="md:col-span-2 lg:col-span-2">
             <div className="bg-white rounded-2xl p-6 shadow-card-lg animate-card-hover transition-all duration-200">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -297,14 +301,6 @@ export default function DashboardPage() {
                     <span className="text-2xl">🎯</span>
                   </div>
                   <h2 className="text-2xl font-bold">Daily Goal</h2>
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="flex items-center gap-1">
-                    <span className="text-lg">📚</span> 1/2
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-lg">🏆</span> 2/3
-                  </span>
                 </div>
               </div>
 
@@ -322,53 +318,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* New Submission CTA Card - PROMINENT */}
-          <div className="md:col-span-2 lg:col-span-3">
-            <div 
-              className="relative overflow-hidden rounded-2xl p-8 shadow-card-lg animate-card-hover transition-all duration-200 cursor-pointer"
-              style={{
-                background: 'linear-gradient(135deg, #7a44ff 0%, #5e2ecc 100%)'
-              }}
-              onClick={() => router.push('/submit')}
-            >
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="text-white text-center md:text-left">
-                  <h2 className="text-3xl md:text-4xl font-black mb-2">Ready to Engage? 🚀</h2>
-                  <p className="text-lg opacity-90">Submit your LinkedIn activity proof and earn points!</p>
-                </div>
-                <Button 
-                  size="lg" 
-                  className="bg-white text-streak-purple hover:bg-gray-100 rounded-full text-xl font-bold px-8 py-6 shadow-lg transform transition-transform hover:scale-105"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push('/submit')
-                  }}
-                >
-                  New Submission →
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Longest Streak Card */}
-          <div className="md:col-span-1">
-            <div className="bg-streak-cream rounded-2xl p-6 shadow-card animate-card-hover transition-all duration-200 relative overflow-hidden">
-              <div className="text-6xl font-black text-gray-900 mb-2">
-                {streakData.longest_streak}
-              </div>
-              <div className="text-lg font-semibold text-gray-700 mb-4">
-                Streak Days
-              </div>
-              <div className="text-sm text-gray-600 mb-2">Personal Best</div>
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 opacity-20">
-                <span className="text-8xl">📚</span>
-              </div>
-            </div>
-          </div>
-
           {/* Multiplier Card */}
-          <div className="md:col-span-1">
-            <div className="bg-streak-purple rounded-2xl p-6 shadow-card-lg animate-card-hover transition-all duration-200 text-white relative overflow-hidden">
+          <div className="md:col-span-1 lg:col-span-1">
+            <div className="bg-streak-purple rounded-2xl p-6 shadow-card-lg animate-card-hover transition-all duration-200 text-white relative overflow-hidden h-full flex flex-col justify-center">
               <div className="text-6xl font-black mb-2">
                 {streakData.current_multiplier.toFixed(1)}×
               </div>
@@ -386,7 +338,7 @@ export default function DashboardPage() {
 
           {/* Next Milestone Card */}
           {nextMilestone && (
-            <div className="md:col-span-1">
+            <div className="md:col-span-1 lg:col-span-1">
               <div className="bg-white rounded-2xl p-6 shadow-card animate-card-hover transition-all duration-200">
                 <h3 className="text-lg font-bold mb-4 text-center">Next Milestone</h3>
                 <div className="flex justify-center mb-4">
@@ -506,6 +458,9 @@ export default function DashboardPage() {
           </div>
 
         </div>
+
+        {/* Floating Action Button */}
+        <SubmissionFAB />
       </div>
     </div>
   )

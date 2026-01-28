@@ -103,6 +103,35 @@ export async function POST(request: NextRequest) {
         })
     }
 
+    // Create notification for user
+    await supabaseAdmin
+      .from('notifications')
+      .insert({
+        user_id: submission.user_id,
+        type: 'submission_approved',
+        title: 'Submission Approved!',
+        message: `Your ${submission.action_type.replace('_', ' ')} submission was approved. You earned ${finalPoints} points!`,
+        related_submission_id: submission_id,
+        points_change: finalPoints,
+        is_read: false
+      })
+
+    // Increment unread notification count
+    const { data: currentUserData } = await supabaseAdmin
+      .from('users')
+      .select('unread_notifications_count')
+      .eq('id', submission.user_id)
+      .single()
+
+    if (currentUserData) {
+      await supabaseAdmin
+        .from('users')
+        .update({
+          unread_notifications_count: (currentUserData.unread_notifications_count || 0) + 1
+        })
+        .eq('id', submission.user_id)
+    }
+
     return NextResponse.json({
       message: 'Submission approved successfully',
       base_points: points,

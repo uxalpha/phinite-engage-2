@@ -8,12 +8,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import UserMenu from '@/components/UserMenu'
+import NotificationBell from '@/components/NotificationBell'
 
 interface User {
   id: string
   name: string
   email: string
   total_points: number
+  unread_notifications_count?: number
+  profile_image_url?: string
 }
 
 export default function SubmitPage() {
@@ -124,19 +128,14 @@ export default function SubmitPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black">New Submission 🚀</h1>
-              <p className="text-muted-foreground mt-1">Upload proof of your LinkedIn activity</p>
+          <div className="flex flex-row justify-between items-start gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black">New Submission 🚀</h1>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">Upload proof of your LinkedIn activity</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Total Points</div>
-                <div className="text-2xl font-bold text-streak-purple">{user.total_points}</div>
-              </div>
-              <Button onClick={handleLogout} variant="outline" size="sm" className="rounded-full">
-                Logout
-              </Button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <NotificationBell unreadCount={user.unread_notifications_count || 0} />
+              <UserMenu user={user} />
             </div>
           </div>
         </div>

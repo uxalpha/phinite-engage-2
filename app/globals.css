@@ -163,3 +163,18 @@
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out;
 }
+
+@keyframes pulse-fab {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 10px 25px rgba(122, 68, 255, 0.3);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 15px 35px rgba(122, 68, 255, 0.5);
+  }
+}
+
+.animate-pulse-fab {
+  animation: pulse-fab 2s ease-in-out infinite;
+}

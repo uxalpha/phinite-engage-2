@@ -8,6 +8,8 @@ export interface User {
   last_activity_date?: string | null
   grace_day_used?: boolean
   grace_day_date?: string | null
+  profile_image_url?: string
+  unread_notifications_count?: number
   created_at: string
 }
 
@@ -109,4 +111,16 @@ export interface DayStatus {
   date: string
   status: 'verified' | 'missed' | 'grace_used'
   submission_count: number
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: 'submission_approved' | 'submission_rejected' | 'points_awarded' | 'streak_milestone'
+  title: string
+  message: string
+  related_submission_id?: string
+  points_change?: number
+  is_read: boolean
+  created_at: string
 }

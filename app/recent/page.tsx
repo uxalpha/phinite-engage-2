@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import UserMenu from '@/components/UserMenu'
+import NotificationBell from '@/components/NotificationBell'
 
 interface User {
   id: string
   name: string
   email: string
   total_points: number
+  unread_notifications_count?: number
+  profile_image_url?: string
 }
 
 interface Submission {
@@ -119,23 +123,18 @@ export default function RecentSubmissionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-streak-gray p-4 md:p-8">
+    <div className="min-h-screen bg-streak-gray p-4 md:p-8 pb-24">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black">Recent Submissions 📋</h1>
-              <p className="text-muted-foreground mt-1">Track your LinkedIn activity submissions</p>
+          <div className="flex flex-row justify-between items-start gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black">Recent Submissions 📋</h1>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">Track your LinkedIn activity submissions</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Total Points</div>
-                <div className="text-2xl font-bold text-streak-purple">{user.total_points}</div>
-              </div>
-              <Button onClick={handleLogout} variant="outline" size="sm" className="rounded-full">
-                Logout
-              </Button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <NotificationBell unreadCount={user.unread_notifications_count || 0} />
+              <UserMenu user={user} />
             </div>
           </div>
         </div>
@@ -171,17 +170,6 @@ export default function RecentSubmissionsPage() {
               Admin
             </Button>
           )}
-        </div>
-
-        {/* Quick Action Button */}
-        <div className="mb-6">
-          <Button 
-            size="lg"
-            className="bg-streak-purple hover:bg-streak-purple/90 rounded-full text-lg font-bold px-8"
-            onClick={() => router.push('/submit')}
-          >
-            ➕ New Submission
-          </Button>
         </div>
 
         {/* Filter Tabs */}
@@ -332,6 +320,19 @@ export default function RecentSubmissionsPage() {
             className="rounded-full"
           >
             ← Back to Dashboard
+          </Button>
+        </div>
+      </div>
+
+      {/* Sticky Bottom Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-lg z-50">
+        <div className="max-w-6xl mx-auto">
+          <Button 
+            size="lg"
+            className="w-full bg-streak-purple hover:bg-streak-purple/90 rounded-xl text-lg font-bold h-14"
+            onClick={() => router.push('/submit')}
+          >
+             New Submission
           </Button>
         </div>
       </div>

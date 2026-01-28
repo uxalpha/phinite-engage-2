@@ -65,12 +65,32 @@ CREATE TABLE admins (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Notifications table
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('submission_approved', 'submission_rejected', 'points_awarded', 'streak_milestone')),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  related_submission_id UUID REFERENCES submissions(id),
+  points_change INTEGER,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add profile image and notification count to users (run these as migrations if table already exists)
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS unread_notifications_count INTEGER DEFAULT 0;
+
 -- Indexes for better performance
 CREATE INDEX idx_submissions_user_id ON submissions(user_id);
 CREATE INDEX idx_submissions_status ON submissions(status);
 CREATE INDEX idx_submissions_submitted_at ON submissions(submitted_at DESC);
 CREATE INDEX idx_monthly_points_user_month ON monthly_points(user_id, month);
 CREATE INDEX idx_monthly_points_month ON monthly_points(month);
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 
 -- Function to update user total points
 CREATE OR REPLACE FUNCTION update_user_total_points()
@@ -125,3 +145,4 @@ COMMENT ON TABLE users IS 'Registered users of the platform';
 COMMENT ON TABLE submissions IS 'Proof submissions with AI verification results';
 COMMENT ON TABLE monthly_points IS 'Historical record of monthly points per user';
 COMMENT ON TABLE admins IS 'Admin users with special privileges';
+COMMENT ON TABLE notifications IS 'User notifications for submission status updates and achievements';
