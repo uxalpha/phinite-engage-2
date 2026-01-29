@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { authenticate } from '@/lib/middleware'
+import { authenticateUser } from '@/lib/middleware'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     let query = supabaseAdmin
       .from('notifications')
       .select('*')
-      .eq('user_id', auth.user.id)
+      .eq('user_id', auth.userId)
       .order('created_at', { ascending: false })
 
     if (unreadOnly) {

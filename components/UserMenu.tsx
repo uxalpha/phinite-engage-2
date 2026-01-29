@@ -40,16 +40,19 @@ export default function UserMenu({ user }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="relative h-10 w-10 rounded-full border-2 border-gray-200 hover:border-streak-purple transition-colors overflow-hidden"
+          className="relative h-10 w-10 rounded-full border-2 border-gray-200 hover:border-streak-purple transition-colors overflow-hidden p-0"
         >
           {user.profile_image_url ? (
-            <Image
-              src={user.profile_image_url}
-              alt={user.name}
-              width={40}
-              height={40}
-              className="h-full w-full rounded-full object-cover"
-            />
+            <div className="relative w-full h-full">
+              <Image
+                key={user.profile_image_url}
+                src={user.profile_image_url}
+                alt={user.name}
+                fill
+                className="object-cover rounded-full"
+                unoptimized
+              />
+            </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-streak-purple text-white font-bold text-sm">
               {getInitials(user.name)}

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { authenticate } from '@/lib/middleware'
+import { authenticateUser } from '@/lib/middleware'
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, email, name, profile_image_url, total_points, current_streak, longest_streak')
-      .eq('id', auth.user.id)
+      .eq('id', auth.userId)
       .single()
 
     if (error || !user) {
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest) {
     const { data: updatedUser, error } = await supabaseAdmin
       .from('users')
       .update(updates)
-      .eq('id', auth.user.id)
+      .eq('id', auth.userId)
       .select()
       .single()
 

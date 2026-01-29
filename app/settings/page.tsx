@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [profileError, setProfileError] = useState('')
   const [profileSaving, setProfileSaving] = useState(false)
   const [compressing, setCompressing] = useState(false)
+  const [imageUpdateTime, setImageUpdateTime] = useState(Date.now())
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -148,6 +149,7 @@ export default function SettingsPage() {
       setProfileImageUrl(imageUrl)
       setAvatarFile(null)
       setAvatarPreview(null)
+      setImageUpdateTime(Date.now())
 
       setProfileMessage('Profile updated successfully!')
     } catch (err: any) {
@@ -278,10 +280,11 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <Label>Profile Picture</Label>
               <div className="flex items-center gap-4">
-                <div className="relative">
+                <div className="relative w-20 h-20">
                   {avatarPreview || profileImageUrl ? (
                     <img
-                      src={avatarPreview || profileImageUrl}
+                      key={imageUpdateTime}
+                      src={avatarPreview ? avatarPreview : `${profileImageUrl}?t=${imageUpdateTime}`}
                       alt="Profile"
                       className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
                     />

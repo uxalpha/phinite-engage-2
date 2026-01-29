@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { authenticate } from '@/lib/middleware'
+import { authenticateUser } from '@/lib/middleware'
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('notifications')
       .update({ is_read: true })
-      .eq('user_id', auth.user.id)
+      .eq('user_id', auth.userId)
       .eq('is_read', false)
 
     if (updateError) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     await supabaseAdmin
       .from('users')
       .update({ unread_notifications_count: 0 })
-      .eq('id', auth.user.id)
+      .eq('id', auth.userId)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { authenticate } from '@/lib/middleware'
+import { authenticateUser } from '@/lib/middleware'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -19,7 +19,7 @@ export async function PATCH(
       .from('notifications')
       .select('*')
       .eq('id', notificationId)
-      .eq('user_id', auth.user.id)
+      .eq('user_id', auth.userId)
       .single()
 
     if (fetchError || !notification) {
@@ -45,12 +45,19 @@ export async function PATCH(
 
     // Decrement unread count if it was previously unread
     if (!notification.is_read) {
+      // Get current unread count first
+      const { data: userData } = await supabaseAdmin
+        .from('users')
+        .select('unread_notifications_count')
+        .eq('id', auth.userId)
+        .single()
+      
       await supabaseAdmin
         .from('users')
         .update({
-          unread_notifications_count: Math.max(0, (auth.user.unread_notifications_count || 1) - 1)
+          unread_notifications_count: Math.max(0, (userData?.unread_notifications_count || 1) - 1)
         })
-        .eq('id', auth.user.id)
+        .eq('id', auth.userId)
     }
 
     return NextResponse.json({ success: true })

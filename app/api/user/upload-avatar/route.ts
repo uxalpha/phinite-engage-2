@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { authenticate } from '@/lib/middleware'
+import { authenticateUser } from '@/lib/middleware'
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const fileExt = file.name.split('.').pop()
-    const fileName = `${auth.user.id}-${Date.now()}.${fileExt}`
+    const fileName = `${auth.userId}-${Date.now()}.${fileExt}`
     const filePath = `avatars/${fileName}`
 
     // Upload to Supabase Storage
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('users')
       .update({ profile_image_url: publicUrl })
-      .eq('id', auth.user.id)
+      .eq('id', auth.userId)
 
     if (updateError) {
       console.error('Profile update error:', updateError)

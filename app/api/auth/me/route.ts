@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Get user data
     const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, name, total_points, created_at')
+      .select('id, email, name, total_points, profile_image_url, unread_notifications_count, created_at')
       .eq('id', auth.userId)
       .single()
 

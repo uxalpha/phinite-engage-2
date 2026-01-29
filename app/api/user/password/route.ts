@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { authenticate } from '@/lib/middleware'
+import { authenticateUser } from '@/lib/middleware'
 import { comparePassword, hashPassword } from '@/lib/utils'
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await authenticate(request)
+    const auth = await authenticateUser(request)
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest) {
     const { data: user, error: fetchError } = await supabaseAdmin
       .from('users')
       .select('password_hash')
-      .eq('id', auth.user.id)
+      .eq('id', auth.userId)
       .single()
 
     if (fetchError || !user) {
@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('users')
       .update({ password_hash: newPasswordHash })
-      .eq('id', auth.user.id)
+      .eq('id', auth.userId)
 
     if (updateError) {
       console.error('Password update error:', updateError)
