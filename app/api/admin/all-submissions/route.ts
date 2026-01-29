@@ -46,8 +46,9 @@ export async function GET(request: NextRequest) {
       if (!byStatus[sub.status]) {
         byStatus[sub.status] = []
       }
+      const userData = Array.isArray(sub.users) ? sub.users[0] : sub.users
       byStatus[sub.status].push({
-        user: sub.users?.email,
+        user: userData?.email,
         action: sub.action_type,
         submitted: sub.submitted_at,
         workflow_id: sub.workflow_id
@@ -57,14 +58,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       total: submissions?.length || 0,
       byStatus,
-      recentSubmissions: submissions?.slice(0, 10).map(s => ({
-        id: s.id,
-        user: s.users?.email,
-        status: s.status,
-        action: s.action_type,
-        submitted: s.submitted_at,
-        workflow_id: s.workflow_id
-      }))
+      recentSubmissions: submissions?.slice(0, 10).map(s => {
+        const userData = Array.isArray(s.users) ? s.users[0] : s.users
+        return {
+          id: s.id,
+          user: userData?.email,
+          status: s.status,
+          action: s.action_type,
+          submitted: s.submitted_at,
+          workflow_id: s.workflow_id
+        }
+      })
     })
   } catch (error) {
     console.error('Admin all submissions error:', error)

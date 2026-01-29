@@ -4,7 +4,7 @@ import { authenticateUser } from '@/lib/middleware'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateUser(request)
@@ -12,7 +12,7 @@ export async function PATCH(
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
-    const notificationId = params.id
+    const { id: notificationId } = await params
 
     // Verify notification belongs to user
     const { data: notification, error: fetchError } = await supabaseAdmin

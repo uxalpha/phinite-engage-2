@@ -267,20 +267,14 @@ export default function NotificationsPage() {
         <div className="bg-white rounded-2xl p-2 shadow-card mb-6 inline-flex gap-2">
           <Button
             variant={filter === 'all' ? 'default' : 'ghost'}
-            onClick={() => {
-              setFilter('all')
-              fetchNotifications(localStorage.getItem('token') || '')
-            }}
+            onClick={() => setFilter('all')}
             className={`rounded-xl ${filter === 'all' ? 'bg-streak-purple hover:bg-streak-purple/90' : ''}`}
           >
             All ({notifications.length})
           </Button>
           <Button
             variant={filter === 'unread' ? 'default' : 'ghost'}
-            onClick={() => {
-              setFilter('unread')
-              fetchNotifications(localStorage.getItem('token') || '')
-            }}
+            onClick={() => setFilter('unread')}
             className={`rounded-xl ${filter === 'unread' ? 'bg-streak-purple hover:bg-streak-purple/90' : ''}`}
           >
             Unread ({notifications.filter((n) => !n.is_read).length})

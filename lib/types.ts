@@ -10,7 +10,7 @@ export interface User {
   grace_day_date?: string | null
   profile_image_url?: string
   unread_notifications_count?: number
-  created_at: string
+  created_at?: string
 }
 
 export interface Submission {
